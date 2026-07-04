@@ -88,7 +88,11 @@ func isCfgEqual(config1 *cfg, config2 *cfg) bool {
 	return config1.IsTerm == config2.IsTerm &&
 		isFileCfgEqual(&config1.fileCfg, &config2.fileCfg) &&
 		isPatternCfgEqual(&config1.patternCfg, &config2.patternCfg) &&
-		isFileCfgEqual(&config1.fileCfg, &config2.fileCfg)
+		isDisplayCfgEqual(&config1.displayCfg, &config2.displayCfg)
+}
+
+func isDisplayCfgEqual(config1 *displayCfg, config2 *displayCfg) bool {
+	return *config1 == *config2
 }
 
 var NoArgsError error = errors.New("No args supplied to program")
@@ -110,14 +114,17 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	flagSet.StringVar(color, COLOUR, *color, "alias for --color")
 	flagSet.BoolVar(&config.UseCount, COUNT_ALIAS, config.UseCount, "alias for --count")
 
+
 	if err := flagSet.Parse(args); err != nil {
 		return nil, err
 	}
+
 
 	// generate the --help config before erroring so we can print the usage guide
 	if len(args) == 0 {
 		return nil, NoArgsError
 	}
+
 
 	var validationError error
 	flagSet.Visit(func(f *flag.Flag) {
@@ -133,7 +140,9 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 		if slices.Contains(colorAliases, f.Name) {
 			if !isColorOption(f.Value.String()) {
 				validationError = fmt.Errorf("Unknown option for %s flag", f.Name)
+				return
 			}
+			config.Color = ColorOption(*color)
 		}
 	})
 	if validationError != nil {
