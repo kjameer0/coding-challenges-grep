@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"flag"
+	"testing"
+)
 
 func Test_parseOptions(t *testing.T) {
 	tests := []struct {
@@ -12,15 +15,28 @@ func Test_parseOptions(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			// no args 
+			// no args
 			args:    []string{},
 			want:    &cfg{},
+			wantErr: true,
+		},
+		{
+			// correct color option
+			args:    []string{"--color=auto"},
+			want:    &cfg{displayCfg: displayCfg{Color: "auto"}},
 			wantErr: false,
+		},
+		{
+			// incorrect color option
+			args:    []string{"--color=gibberish"},
+			want:    &cfg{},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotErr := parseOptions(tt.args)
+			fs := flag.NewFlagSet("testcustomgrep", flag.ExitOnError)
+			got, gotErr := parseOptions(tt.args, fs)
 			if gotErr != nil {
 				if !tt.wantErr {
 					t.Errorf("parseOptions() failed: %v", gotErr)
@@ -31,7 +47,7 @@ func Test_parseOptions(t *testing.T) {
 				t.Fatal("parseOptions() succeeded unexpectedly")
 			}
 			// TODO: update the condition below to compare got with tt.want.
-			if true {
+			if !isCfgEqual(tt.want, got) {
 				t.Errorf("parseOptions() = %v, want %v", got, tt.want)
 			}
 		})
