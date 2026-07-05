@@ -27,6 +27,8 @@ const (
 	BEFORE_ALIAS   = "B"
 	AFTER_ALIAS    = "A"
 	CONTEXT_ALIAS  = "C"
+	REGEXP         = "regexp"
+	REGEXP_ALIAS   = "e"
 )
 
 var contextAliases []string = []string{CONTEXT, CONTEXT_ALIAS}
@@ -97,6 +99,20 @@ func isDisplayCfgEqual(config1 *displayCfg, config2 *displayCfg) bool {
 
 var NoArgsError error = errors.New("No args supplied to program")
 
+type PatternList struct {
+	patterns []string
+}
+
+func (p *PatternList) String() string {
+	return fmt.Sprintf("%v", p.patterns)
+}
+
+func (p *PatternList) Set(rawValue string) error {
+	p.patterns = append(p.patterns, rawValue)
+	return nil
+}
+
+
 func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	config := &cfg{}
 	config.IsTerm = term.IsTerminal(int(os.Stdin.Fd()))
@@ -110,21 +126,30 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	flagSet.IntVar(&config.BeforeContext, BEFORE_ALIAS, 0, "alias for --before-context")
 	flagSet.IntVar(&config.AfterContext, AFTER_ALIAS, 0, "alias for --after-context")
 	flagSet.Int(CONTEXT_ALIAS, 0, "alias for --context")
-
+	patterns := &PatternList{}
+	flagSet.Var(patterns, REGEXP, "Adds a new pattern to search for. Allows providing more than one pattern to search. Adding multiple --regexp to flags will OR patterns.")
+	flagSet.Var(patterns, REGEXP_ALIAS, "alias for --regexp")
 	flagSet.StringVar(color, COLOUR, *color, "alias for --color")
 	flagSet.BoolVar(&config.UseCount, COUNT_ALIAS, config.UseCount, "alias for --count")
-
 
 	if err := flagSet.Parse(args); err != nil {
 		return nil, err
 	}
 
-
+	config.patterns = patterns.patterns
 	// generate the --help config before erroring so we can print the usage guide
 	if len(args) == 0 {
 		return nil, NoArgsError
 	}
 
+	patternArg := flagSet.Arg(0)
+	if patternArg != "" {
+		config.patterns = append(config.patterns, patternArg)
+	}
+
+	if len(config.patterns) == 0 {
+		return nil, NoArgsError
+	}
 
 	var validationError error
 	flagSet.Visit(func(f *flag.Flag) {
@@ -153,7 +178,6 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 }
 
 func main() {
-
 	flagSet := flag.NewFlagSet("customgrep", flag.ExitOnError)
 	_, err := parseOptions(os.Args[1:], flagSet)
 	if err != nil {
@@ -164,10 +188,6 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(2)
 	}
-
-	//what happens when no args are supplied
-
-	//0 positional args = exit with help message
 
 	//1 arg = only pattern, allow reading input from stdin
 }

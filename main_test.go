@@ -21,39 +21,56 @@ func Test_parseOptions(t *testing.T) {
 		},
 		{
 			name:    "correct color option",
-			args:    []string{"--color=auto"},
+			args:    []string{"--color=auto", "hello"},
 			want:    &cfg{displayCfg: displayCfg{Color: "auto"}},
 			wantErr: false,
 		},
 		{
 			name:    "incorrect color option",
-			args:    []string{"--color=gibberish"},
+			args:    []string{"--color=gibberish", "hello"},
 			want:    &cfg{},
 			wantErr: true,
 		},
 		{
 			name:    "--context overrides both before and after context",
-			args:    []string{"-B=1", "-A=4", "--context=3"},
+			args:    []string{"-B=1", "-A=4", "--context=3", "hello"},
 			want:    &cfg{displayCfg: displayCfg{BeforeContext: 3, AfterContext: 3}},
 			wantErr: false,
 		},
 		{
 			name:    "--context overrides both before and after context",
-			args:    []string{"-B=2", "-A=4"},
+			args:    []string{"-B=2", "-A=4", "pattern"},
 			want:    &cfg{displayCfg: displayCfg{BeforeContext: 2, AfterContext: 4}},
 			wantErr: false,
 		},
 		{
 			name:    "-C alias behaves the same as --context",
-			args:    []string{"-C=5"},
+			args:    []string{"-C=5", "hello"},
 			want:    &cfg{displayCfg: displayCfg{BeforeContext: 5, AfterContext: 5}},
 			wantErr: false,
 		},
 		{
-			// positional pattern arg with no flags should not error
 			name:    "one positonal arg and no flags",
 			args:    []string{"foo"},
 			want:    &cfg{},
+			wantErr: false,
+		},
+		{
+			name:    "just non-pattern flags and no postional args",
+			args:    []string{"-c"},
+			want:    &cfg{},
+			wantErr: true,
+		},
+		{
+			name:    "allows single regexp arg with no positional arg",
+			args:    []string{"-e=hello"},
+			want:    &cfg{patternCfg: patternCfg{patterns: []string{"hello"}}},
+			wantErr: false,
+		},
+		{
+			name:    "allows multiple regexp args with positional arg",
+			args:    []string{"-e=hello", "-e", "welcome", "/try/"},
+			want:    &cfg{patternCfg: patternCfg{patterns: []string{"hello", "welcome", "/try/"}}},
 			wantErr: false,
 		},
 	}
@@ -70,7 +87,7 @@ func Test_parseOptions(t *testing.T) {
 			if tt.wantErr {
 				t.Fatal("parseOptions() succeeded unexpectedly")
 			}
-			// TODO: update the condition below to compare got with tt.want.
+
 			if !isCfgEqual(tt.want, got) {
 				t.Errorf("Test '%s', parseOptions() = %v, want %v", tt.name, got, tt.want)
 			}
