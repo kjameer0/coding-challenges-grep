@@ -29,6 +29,12 @@ const (
 	CONTEXT_ALIAS  = "C"
 	REGEXP         = "regexp"
 	REGEXP_ALIAS   = "e"
+	WORD_REGEXP= "word-regexp"
+	WORD_REGEXP_ALIAS= "w"
+	LINE_REGEXP= "line-regexp"
+	LINE_REGEXP_ALIAS= "x"
+	IGNORE_CASE= "ignore-case"
+	IGNORE_CASE_ALIAS= "i"
 )
 
 var contextAliases []string = []string{CONTEXT, CONTEXT_ALIAS}
@@ -112,6 +118,22 @@ func (p *PatternList) Set(rawValue string) error {
 	return nil
 }
 
+type IncludeFileList struct {
+	file_patterns []string
+}
+
+type ExcludeFileList struct {
+	file_patterns []string
+}
+
+func (p *IncludeFileList) String() string {
+	return fmt.Sprintf("%v", p.file_patterns)
+}
+
+func (p *IncludeFileList) Set(rawValue string) error {
+	p.file_patterns = append(p.file_patterns, rawValue)
+	return nil
+}
 
 func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	config := &cfg{}
@@ -120,8 +142,12 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	flagSet.IntVar(&config.BeforeContext, BEFORE_CONTEXT, 0, "Number of lines above a match to print. Will be overwritten by the -C flag")
 	flagSet.IntVar(&config.AfterContext, AFTER_CONTEXT, 0, "Number of lines below a match to print. Will be overwritten by the -C flag")
 	flagSet.Int(CONTEXT, 0, "print n lines above and below a given match. This value will override the -A and -B flags")
+	flagSet.BoolVar(&config.WordRegexp,  WORD_REGEXP, false, "Only return pattern matches that are full words. TODO: define full word.")
+	flagSet.BoolVar(&config.WordRegexp,  WORD_REGEXP_ALIAS, false, "Alias for --word-regexp.")
+	flagSet.BoolVar(&config.LineRegexp,  LINE_REGEXP, false, "Only return pattern matches that take up the whole line, not including trailing new line.")
+	flagSet.BoolVar(&config.LineRegexp,  LINE_REGEXP_ALIAS, false, "Alias for --line-regexp.")
 	color := flagSet.String(COLOR, "", "set colorizing for text matches in the GREP_COLOR_2 env var. auto=colorize for terminal output but not for pipe output. 'never' turns off colorization. 'always' forces colorization to any output")
-	//TODO: add flags with custom setters, like -e
+
 	flagSet.BoolVar(&config.UseCount, COUNT, false, "show only a count of matching lines")
 	flagSet.IntVar(&config.BeforeContext, BEFORE_ALIAS, 0, "alias for --before-context")
 	flagSet.IntVar(&config.AfterContext, AFTER_ALIAS, 0, "alias for --after-context")
@@ -135,7 +161,7 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 	if err := flagSet.Parse(args); err != nil {
 		return nil, err
 	}
-
+	//Do not carry over flag.Value interface to CLI config
 	config.patterns = patterns.patterns
 	// generate the --help config before erroring so we can print the usage guide
 	if len(args) == 0 {
@@ -170,6 +196,7 @@ func parseOptions(args []string, flagSet *flag.FlagSet) (*cfg, error) {
 			config.Color = ColorOption(*color)
 		}
 	})
+
 	if validationError != nil {
 		return nil, validationError
 	}

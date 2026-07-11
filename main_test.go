@@ -26,6 +26,12 @@ func Test_parseOptions(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "correct color option, with alias",
+			args:    []string{"--colour=auto", "hello"},
+			want:    &cfg{displayCfg: displayCfg{Color: "auto"}},
+			wantErr: false,
+		},
+		{
 			name:    "incorrect color option",
 			args:    []string{"--color=gibberish", "hello"},
 			want:    &cfg{},
