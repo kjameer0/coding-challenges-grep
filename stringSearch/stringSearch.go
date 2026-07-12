@@ -13,18 +13,40 @@ type FixedStringSearch struct {
 }
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
-func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResult, error) {
-	results := make([]SearchResult, 0, 100)
+func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
+	results := make([]*SearchResult, 0, 100)
+
 	for _, pattern := range patterns {
-		reg, err := regexp.Compile(pattern)
-		reg.FindAllStringIndex(line)
+		r, err := regexp.Compile(regexp.QuoteMeta(pattern))
 		if err != nil {
 			return nil, err
 		}
+		matches := r.FindAllIndex([]byte(line), -1)
+		for _, match := range matches {
+			results = append(results, NewSearchResult(match[0], match[1]))
+		}
 	}
+
+	return results, nil
 }
 
-type BasicRegexSearcher struct {
+type BasicRegexSearch struct {
+}
+
+func (s *BasicRegexSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
+	results := make([]*SearchResult, 0, 100)
+
+	for _, pattern := range patterns {
+		r, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		matches := r.FindAllIndex([]byte(line), -1)
+		for _, match := range matches {
+			results = append(results, NewSearchResult(match[0], match[1]))
+		}
+	}
+	return results, nil
 }
 
 /*
@@ -34,9 +56,12 @@ I need to be able to receive a string line, patterns, and options and be able to
 //the line is assumed because the caller can know what the line is from when they call
 type SearchResult struct {
 	StartColumn int
-	//should not be last idx of match + 1
-	EndColumn int
+	EndColumn   int
 	// TODO: decide whether or not to include the actual string
+}
+
+func NewSearchResult(startColumn, endColumn int) *SearchResult {
+	return &SearchResult{StartColumn: startColumn, EndColumn: endColumn}
 }
 
 // func isMatch method
