@@ -13,6 +13,7 @@ type FixedStringSearch struct {
 }
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
+// TODO: reconcile overlapping intervals
 func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
 	results := make([]*SearchResult, 0, 100)
 
@@ -28,6 +29,28 @@ func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchRes
 	}
 
 	return results, nil
+}
+
+// if multiple patterns end up highlighting the same parts of the string, consolidate those into the smallest possible window
+func ReconcileOverlappingMatches(matches []*SearchResult) []*SearchResult {
+	if len(matches) == 0 {
+		return []*SearchResult{}
+	}
+	result := []*SearchResult{}
+	intervalStart := matches[0].StartColumn
+	intervalEnd := matches[0].EndColumn
+	for idx := 1; idx < len(matches); idx++ {
+		currentMatch := matches[idx]
+		if currentMatch.StartColumn > intervalEnd {
+			result = append(result, &SearchResult{StartColumn: intervalStart, EndColumn: intervalEnd})
+			intervalStart = currentMatch.StartColumn
+			intervalEnd = currentMatch.EndColumn
+		} else if currentMatch.EndColumn > intervalEnd{
+			intervalEnd = currentMatch.EndColumn
+		}
+	}
+	result = append(result, &SearchResult{StartColumn: intervalStart, EndColumn: intervalEnd})
+	return result
 }
 
 type BasicRegexSearch struct {
