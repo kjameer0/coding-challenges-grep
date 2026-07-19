@@ -14,14 +14,18 @@ type FixedStringSearch struct {
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
 func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResult, error) {
-	results :=
+	results := []SearchResult{}
 	for _, pattern := range patterns {
 		reg, err := regexp.Compile(pattern)
-		reg.FindAllStringIndex(line)
+		output := reg.FindAllStringIndex(line, -1)
 		if err != nil {
 			return nil, err
 		}
+		for _, indexPair := range output {
+			results = append(results, SearchResult{StartColumn: indexPair[0], EndColumn: indexPair[1]})
+		}
 	}
+	return results, nil
 }
 
 type BasicRegexSearcher struct {
