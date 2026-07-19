@@ -6,15 +6,15 @@ import (
 
 // [][2] represents a slice of size 2 arrays(pair) where pair[0] is the start of the pattern match and pair[1] is the end. (pair[1] + 1) = first idx after the match that is not included in the match. idx in this case refers to bytes, not runes
 type LineSearcher interface {
-	Search(line string, patterns []string) ([]SearchResult, error)
+	Search(line string, patterns []string) ([]*SearchResult, error)
 }
 
 type FixedStringSearch struct {
 }
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
-func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResult, error) {
-	results := []SearchResult{}
+func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
+	results := []*SearchResult{}
 	for _, pattern := range patterns {
 		reg, err := regexp.Compile(regexp.QuoteMeta(pattern))
 		output := reg.FindAllStringIndex(line, -1)
@@ -22,7 +22,7 @@ func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResu
 			return nil, err
 		}
 		for _, indexPair := range output {
-			results = append(results, SearchResult{StartColumn: indexPair[0], EndColumn: indexPair[1]})
+			results = append(results, NewSearchResult(indexPair[0], indexPair[1]))
 		}
 	}
 	return results, nil
@@ -39,14 +39,14 @@ func ReconcileOverlappingMatches(matches []*SearchResult) []*SearchResult {
 	for idx := 1; idx < len(matches); idx++ {
 		currentMatch := matches[idx]
 		if currentMatch.StartColumn > intervalEnd {
-			result = append(result, &SearchResult{StartColumn: intervalStart, EndColumn: intervalEnd})
+			result = append(result, NewSearchResult(intervalStart, intervalEnd))
 			intervalStart = currentMatch.StartColumn
 			intervalEnd = currentMatch.EndColumn
 		} else if currentMatch.EndColumn > intervalEnd {
 			intervalEnd = currentMatch.EndColumn
 		}
 	}
-	result = append(result, &SearchResult{StartColumn: intervalStart, EndColumn: intervalEnd})
+	result = append(result, NewSearchResult(intervalStart, intervalEnd))
 	return result
 }
 
@@ -81,6 +81,10 @@ func NewSearchResult(startColumn, endColumn int) *SearchResult {
 
 // func isMatch method
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
-func SearchLine(line string, searchStrategy LineSearcher, patterns []string) ([]SearchResult, error) {
-	return searchStrategy.Search(line, patterns)
+func SearchLine(line string, searchStrategy LineSearcher, patterns []string) ([]*SearchResult, error) {
+	results, err := searchStrategy.Search(line, patterns)
+	if err != nil {
+		return nil, err
+	}
+	return ReconcileOverlappingMatches(results), nil
 }

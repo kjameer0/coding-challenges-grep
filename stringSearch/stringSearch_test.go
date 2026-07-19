@@ -13,14 +13,14 @@ func TestFixedStringSearch_Search(t *testing.T) {
 		// Named input parameters for target function.
 		line     string
 		patterns []string
-		want     []stringsearch.SearchResult
+		want     []*stringsearch.SearchResult
 		wantErr  bool
 	}{
 		{
 			name:     "single match",
 			line:     "hello world",
 			patterns: []string{"world"},
-			want: []stringsearch.SearchResult{
+			want: []*stringsearch.SearchResult{
 				{StartColumn: 6, EndColumn: 11},
 			},
 			wantErr: false,
@@ -29,7 +29,7 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			name:     "multiple matches of same pattern",
 			line:     "foo bar foo baz foo",
 			patterns: []string{"foo"},
-			want: []stringsearch.SearchResult{
+			want: []*stringsearch.SearchResult{
 				{StartColumn: 0, EndColumn: 3},
 				{StartColumn: 8, EndColumn: 11},
 				{StartColumn: 16, EndColumn: 19},
@@ -40,14 +40,14 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			name:     "no match",
 			line:     "hello world",
 			patterns: []string{"xyz"},
-			want:     []stringsearch.SearchResult{},
+			want:     []*stringsearch.SearchResult{},
 			wantErr:  false,
 		},
 		{
 			name:     "multiple patterns",
 			line:     "hello world",
 			patterns: []string{"hello", "world"},
-			want: []stringsearch.SearchResult{
+			want: []*stringsearch.SearchResult{
 				{StartColumn: 0, EndColumn: 5},
 				{StartColumn: 6, EndColumn: 11},
 			},
@@ -57,7 +57,7 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			name:     "repeated chars",
 			line:     "aaaaaa",
 			patterns: []string{"aaa", "aa"},
-			want: []stringsearch.SearchResult{
+			want: []*stringsearch.SearchResult{
 				{StartColumn: 0, EndColumn: 3},
 				{StartColumn: 3, EndColumn: 6},
 				{StartColumn: 0, EndColumn: 2},
@@ -70,7 +70,7 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			name:     "matches literal text of a regular expression string",
 			line:     "a+",
 			patterns: []string{"aa"},
-			want:     []stringsearch.SearchResult{},
+			want:     []*stringsearch.SearchResult{},
 			wantErr:  false,
 		},
 	}
@@ -89,6 +89,121 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Search() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReconcileOverlappingMatches(t *testing.T) {
+	tests := []struct {
+		name    string
+		matches []*stringsearch.SearchResult
+		want    []*stringsearch.SearchResult
+	}{
+		{
+			name:    "Empty input yields empty array of match intervals",
+			matches: []*stringsearch.SearchResult{},
+			want:    []*stringsearch.SearchResult{},
+		},
+		{
+			name: "Overlapping intervals get merged",
+			matches: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   1,
+				},
+				{
+					StartColumn: 1,
+					EndColumn:   2,
+				},
+			},
+			want: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   2,
+				},
+			},
+		},
+		{
+			name: "Multiple non-consecutive overlapping intervals get merged",
+			matches: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   1,
+				},
+				{
+					StartColumn: 1,
+					EndColumn:   2,
+				},
+				{
+					StartColumn: 10,
+					EndColumn:   30,
+				},
+				{
+					StartColumn: 25,
+					EndColumn:   45,
+				},
+			},
+			want: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   2,
+				},
+				{
+					StartColumn: 10,
+					EndColumn:   45,
+				},
+			},
+		},
+		{
+			name: "Intervals inside of a larger interval get subsumed",
+			matches: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   1,
+				},
+				{
+					StartColumn: 1,
+					EndColumn:   2,
+				},
+				{
+					StartColumn: 10,
+					EndColumn:   30,
+				},
+				{
+					StartColumn: 15,
+					EndColumn:   20,
+				},
+				{
+					StartColumn: 25,
+					EndColumn:   45,
+				},
+			},
+			want: []*stringsearch.SearchResult{
+				{
+					StartColumn: 0,
+					EndColumn:   2,
+				},
+				{
+					StartColumn: 10,
+					EndColumn:   45,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := stringsearch.ReconcileOverlappingMatches(tt.matches)
+			if len(got) != len(tt.want) {
+				t.Errorf("Unequal got and want lengths. got %v, want %v", got, tt.want)
+				return
+			}
+			for intervalIdx := 0; intervalIdx < len(got); intervalIdx++ {
+				gotInterval := got[intervalIdx]
+				wantInterval := tt.want[intervalIdx]
+				if gotInterval.StartColumn != wantInterval.StartColumn || gotInterval.EndColumn != wantInterval.EndColumn {
+					t.Errorf("Name: %s got %v, want %v", tt.name, got, tt.want)
+				}
 			}
 		})
 	}
