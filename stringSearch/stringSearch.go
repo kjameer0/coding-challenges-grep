@@ -16,7 +16,7 @@ type FixedStringSearch struct {
 func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResult, error) {
 	results := []SearchResult{}
 	for _, pattern := range patterns {
-		reg, err := regexp.Compile(pattern)
+		reg, err := regexp.Compile(regexp.QuoteMeta(pattern))
 		output := reg.FindAllStringIndex(line, -1)
 		if err != nil {
 			return nil, err
@@ -31,11 +31,22 @@ func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResu
 type BasicRegexSearcher struct {
 }
 
-/*
-I need to be able to receive a string line, patterns, and options and be able to return the actual matches(indices in a string where matches are located).
-*/
-//is it preferable to have a series of results packed
-//the line is assumed because the caller can know what the line is from when they call
+func (s *BasicRegexSearcher) Search(line string, patterns []string) ([]SearchResult, error) {
+	results := []SearchResult{}
+	for _, pattern := range patterns {
+		reg, err := regexp.Compile(pattern)
+		output := reg.FindAllStringIndex(line, -1)
+		if err != nil {
+			return nil, err
+		}
+		for _, indexPair := range output {
+			results = append(results, SearchResult{StartColumn: indexPair[0], EndColumn: indexPair[1]})
+		}
+	}
+	return results, nil
+}
+
+
 type SearchResult struct {
 	StartColumn int
 	//should not be last idx of match + 1
@@ -43,8 +54,7 @@ type SearchResult struct {
 	// TODO: decide whether or not to include the actual string
 }
 
-// func isMatch method
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
-func SearchLine(line string, searchStrategy LineSearcher, patterns []string) {
-
+func SearchLine(line string, searchStrategy LineSearcher, patterns []string) ([]SearchResult, error) {
+	return searchStrategy.Search(line,patterns)
 }

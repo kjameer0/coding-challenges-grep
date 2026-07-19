@@ -66,10 +66,16 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:     "matches literal text of a regular expression string",
+			line:     "a+",
+			patterns: []string{"aa"},
+			want:     []stringsearch.SearchResult{},
+			wantErr:  false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TODO: construct the receiver type.
 			var s stringsearch.FixedStringSearch
 			got, gotErr := s.Search(tt.line, tt.patterns)
 			if gotErr != nil {
