@@ -13,21 +13,18 @@ type FixedStringSearch struct {
 }
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
-// TODO: reconcile overlapping intervals
-func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
-	results := make([]*SearchResult, 0, 100)
-
+func (s *FixedStringSearch) Search(line string, patterns []string) ([]SearchResult, error) {
+	results := []SearchResult{}
 	for _, pattern := range patterns {
-		r, err := regexp.Compile(regexp.QuoteMeta(pattern))
+		reg, err := regexp.Compile(regexp.QuoteMeta(pattern))
+		output := reg.FindAllStringIndex(line, -1)
 		if err != nil {
 			return nil, err
 		}
-		matches := r.FindAllIndex([]byte(line), -1)
-		for _, match := range matches {
-			results = append(results, NewSearchResult(match[0], match[1]))
+		for _, indexPair := range output {
+			results = append(results, SearchResult{StartColumn: indexPair[0], EndColumn: indexPair[1]})
 		}
 	}
-
 	return results, nil
 }
 
@@ -45,7 +42,7 @@ func ReconcileOverlappingMatches(matches []*SearchResult) []*SearchResult {
 			result = append(result, &SearchResult{StartColumn: intervalStart, EndColumn: intervalEnd})
 			intervalStart = currentMatch.StartColumn
 			intervalEnd = currentMatch.EndColumn
-		} else if currentMatch.EndColumn > intervalEnd{
+		} else if currentMatch.EndColumn > intervalEnd {
 			intervalEnd = currentMatch.EndColumn
 		}
 	}
@@ -72,11 +69,6 @@ func (s *BasicRegexSearch) Search(line string, patterns []string) ([]*SearchResu
 	return results, nil
 }
 
-/*
-I need to be able to receive a string line, patterns, and options and be able to return the actual matches(indices in a string where matches are located).
-*/
-//is it preferable to have a series of results packed
-//the line is assumed because the caller can know what the line is from when they call
 type SearchResult struct {
 	StartColumn int
 	EndColumn   int
@@ -89,6 +81,6 @@ func NewSearchResult(startColumn, endColumn int) *SearchResult {
 
 // func isMatch method
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
-func SearchLine(line string, searchStrategy LineSearcher, patterns []string) {
-
+func SearchLine(line string, searchStrategy LineSearcher, patterns []string) ([]SearchResult, error) {
+	return searchStrategy.Search(line, patterns)
 }

@@ -1,6 +1,10 @@
 package stringsearch_test
 
 import (
+<<<<<<< HEAD
+=======
+	"reflect"
+>>>>>>> pattern-match
 	"testing"
 
 	stringsearch "grep.coding.com/stringSearch"
@@ -12,6 +16,7 @@ func TestFixedStringSearch_Search(t *testing.T) {
 		// Named input parameters for target function.
 		line     string
 		patterns []string
+<<<<<<< HEAD
 		want     []*stringsearch.SearchResult
 		wantErr  bool
 	}{
@@ -22,20 +27,42 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			line:     "hello",
 			want: []*stringsearch.SearchResult{
 				{StartColumn: 0, EndColumn: 5},
+=======
+		want     []stringsearch.SearchResult
+		wantErr  bool
+	}{
+		{
+			name:     "single match",
+			line:     "hello world",
+			patterns: []string{"world"},
+			want: []stringsearch.SearchResult{
+				{StartColumn: 6, EndColumn: 11},
+>>>>>>> pattern-match
 			},
 			wantErr: false,
 		},
 		{
+<<<<<<< HEAD
 			name:     "one pattern, two matches",
 			patterns: []string{"hello"},
 			line:     "hellohello",
 			want: []*stringsearch.SearchResult{
 				{StartColumn: 0, EndColumn: 5},
 				{StartColumn: 5, EndColumn: 10},
+=======
+			name:     "multiple matches of same pattern",
+			line:     "foo bar foo baz foo",
+			patterns: []string{"foo"},
+			want: []stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 3},
+				{StartColumn: 8, EndColumn: 11},
+				{StartColumn: 16, EndColumn: 19},
+>>>>>>> pattern-match
 			},
 			wantErr: false,
 		},
 		{
+<<<<<<< HEAD
 			name:     "one pattern, does not try for overlapping matches",
 			patterns: []string{"hh"},
 			line:     "hhhh",
@@ -82,6 +109,47 @@ func TestFixedStringSearch_Search(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// TODO: construct the receiver type.
+=======
+			name:     "no match",
+			line:     "hello world",
+			patterns: []string{"xyz"},
+			want:     []stringsearch.SearchResult{},
+			wantErr:  false,
+		},
+		{
+			name:     "multiple patterns",
+			line:     "hello world",
+			patterns: []string{"hello", "world"},
+			want: []stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 5},
+				{StartColumn: 6, EndColumn: 11},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "repeated chars",
+			line:     "aaaaaa",
+			patterns: []string{"aaa", "aa"},
+			want: []stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 3},
+				{StartColumn: 3, EndColumn: 6},
+				{StartColumn: 0, EndColumn: 2},
+				{StartColumn: 2, EndColumn: 4},
+				{StartColumn: 4, EndColumn: 6},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "matches literal text of a regular expression string",
+			line:     "a+",
+			patterns: []string{"aa"},
+			want:     []stringsearch.SearchResult{},
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+>>>>>>> pattern-match
 			var s stringsearch.FixedStringSearch
 			got, gotErr := s.Search(tt.line, tt.patterns)
 			if gotErr != nil {
@@ -93,6 +161,7 @@ func TestFixedStringSearch_Search(t *testing.T) {
 			if tt.wantErr {
 				t.Fatal("Search() succeeded unexpectedly")
 			}
+<<<<<<< HEAD
 			for _, result := range got {
 				foundMatch := false
 				for _, wantedResult := range tt.want {
@@ -300,6 +369,10 @@ func TestReconcileOverlappingMatches(t *testing.T) {
 				if gotInterval.StartColumn != wantInterval.StartColumn || gotInterval.EndColumn != wantInterval.EndColumn {
 					t.Errorf("Name: %s got %v+, want %v+", tt.name, got, tt.want)
 				}
+=======
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Search() = %v, want %v", got, tt.want)
+>>>>>>> pattern-match
 			}
 		})
 	}
