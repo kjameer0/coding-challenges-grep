@@ -4,13 +4,46 @@ import (
 	"regexp"
 )
 
+type ExtraRegexOption int
+
+const (
+	None ExtraRegexOption = iota
+	WordRegexp
+	LineRegexp
+)
+
+type SearchConfig struct {
+	IgnoreCase  bool
+	ExtraFilter ExtraRegexOption
+}
+
+type SearchOption func(*SearchConfig)
+
+func WithIgnoreCase(on bool) SearchOption {
+	// return a function that
+	return func(s *SearchConfig) { s.IgnoreCase = on }
+}
+
+func WithAdditionalRegexFilter(regexOption ExtraRegexOption) SearchOption {
+	// return a function that
+	return func(s *SearchConfig) { s.ExtraFilter = regexOption }
+}
+
+func NewSearchConfig(opts ...SearchOption) *SearchConfig {
+	c := &SearchConfig{}
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
 // [][2] represents a slice of size 2 arrays(pair) where pair[0] is the start of the pattern match and pair[1] is the end. (pair[1] + 1) = first idx after the match that is not included in the match. idx in this case refers to bytes, not runes
 type LineSearcher interface {
 	Search(line string, patterns []string) ([]*SearchResult, error)
+	BuildPatterns(patterns []string)
 }
 
-type FixedStringSearch struct {
-}
+type FixedStringSearch struct{}
 
 // TODO: in main package make sure there is logic to filter out repeat patterns
 func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
@@ -50,8 +83,7 @@ func ReconcileOverlappingMatches(matches []*SearchResult) []*SearchResult {
 	return result
 }
 
-type BasicRegexSearch struct {
-}
+type BasicRegexSearch struct{}
 
 func (s *BasicRegexSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
 	results := make([]*SearchResult, 0, 100)
@@ -79,9 +111,8 @@ func NewSearchResult(startColumn, endColumn int) *SearchResult {
 	return &SearchResult{StartColumn: startColumn, EndColumn: endColumn}
 }
 
-// func isMatch method
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
-func SearchLine(line string, searchStrategy LineSearcher, patterns []string) ([]*SearchResult, error) {
+func SearchLine(line string, searchStrategy LineSearcher, patterns []string, searchConfig *SearchConfig) ([]*SearchResult, error) {
 	results, err := searchStrategy.Search(line, patterns)
 	if err != nil {
 		return nil, err
