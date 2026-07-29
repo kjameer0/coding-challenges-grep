@@ -20,7 +20,7 @@ type SearchConfig struct {
 type SearchOption func(*SearchConfig)
 
 func WithIgnoreCase(on bool) SearchOption {
-	// return a function that
+	// return a function that can be called with desired option
 	return func(s *SearchConfig) { s.IgnoreCase = on }
 }
 
