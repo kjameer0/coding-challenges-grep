@@ -2,12 +2,14 @@ package stringsearch
 
 import (
 	"regexp"
+	"slices"
+	"strings"
 )
 
 type ExtraRegexOption int
 
 const (
-	None ExtraRegexOption = iota
+	NoExtraRegex ExtraRegexOption = iota
 	WordRegexp
 	LineRegexp
 )
@@ -24,8 +26,7 @@ func WithIgnoreCase(on bool) SearchOption {
 	return func(s *SearchConfig) { s.IgnoreCase = on }
 }
 
-func WithAdditionalRegexFilter(regexOption ExtraRegexOption) SearchOption {
-	// return a function that
+func WithExtraRegexFilter(regexOption ExtraRegexOption) SearchOption {
 	return func(s *SearchConfig) { s.ExtraFilter = regexOption }
 }
 
@@ -45,6 +46,20 @@ type LineSearcher interface {
 
 type FixedStringSearch struct{}
 
+func (s *FixedStringSearch) BuildPatterns(patterns []string, config *SearchConfig) {
+	//TODO
+	finalizedPatterns := make([]regexp.Regexp, len(patterns))
+  patterns = slices.Clone(patterns)
+	if config.IgnoreCase {
+		//iterate patterns and lower case them
+		for idx, pattern := range patterns {
+			patterns[idx] = strings.ToLower(pattern)
+		}
+	}
+	//what if it's word regexp.
+
+}
+hello  
 // TODO: in main package make sure there is logic to filter out repeat patterns
 func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
 	results := []*SearchResult{}
@@ -113,6 +128,8 @@ func NewSearchResult(startColumn, endColumn int) *SearchResult {
 
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
 func SearchLine(line string, searchStrategy LineSearcher, patterns []string, searchConfig *SearchConfig) ([]*SearchResult, error) {
+	ignoreCase := searchConfig.IgnoreCase
+	extraRegex := searchConfig.ExtraFilter
 	results, err := searchStrategy.Search(line, patterns)
 	if err != nil {
 		return nil, err
