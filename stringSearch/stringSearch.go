@@ -2,8 +2,6 @@ package stringsearch
 
 import (
 	"regexp"
-	"slices"
-	"strings"
 )
 
 type ExtraRegexOption int
@@ -14,9 +12,18 @@ const (
 	LineRegexp
 )
 
+type SearchStrategyValue int
+
+const (
+	FixedStringSearchStrategy SearchStrategyValue = iota
+	BasicRegexSearchStrategy
+)
+
 type SearchConfig struct {
 	IgnoreCase  bool
 	ExtraFilter ExtraRegexOption
+	SearchType  SearchStrategyValue
+	Patterns    []string
 }
 
 type SearchOption func(*SearchConfig)
@@ -30,38 +37,39 @@ func WithExtraRegexFilter(regexOption ExtraRegexOption) SearchOption {
 	return func(s *SearchConfig) { s.ExtraFilter = regexOption }
 }
 
+func WithSearchType(searchStrategy SearchStrategyValue) SearchOption {
+	return func(s *SearchConfig) { s.SearchType = searchStrategy }
+}
+
 func NewSearchConfig(opts ...SearchOption) *SearchConfig {
-	c := &SearchConfig{}
+	c := &SearchConfig{
+		IgnoreCase:  false,
+		ExtraFilter: NoExtraRegex,
+		SearchType:  BasicRegexSearchStrategy,
+		Patterns:    []string{},
+	}
 	for _, opt := range opts {
 		opt(c)
 	}
+	// build modified regex with options
+	// a function has to be chosen here to modify the patterns accordingly
+	//
 	return c
 }
 
 // [][2] represents a slice of size 2 arrays(pair) where pair[0] is the start of the pattern match and pair[1] is the end. (pair[1] + 1) = first idx after the match that is not included in the match. idx in this case refers to bytes, not runes
 type LineSearcher interface {
-	Search(line string, patterns []string) ([]*SearchResult, error)
-	BuildPatterns(patterns []string)
+	Search(line string) ([]*SearchResult, error)
 }
 
-type FixedStringSearch struct{}
+type FixedStringSearch struct {}
 
 func (s *FixedStringSearch) BuildPatterns(patterns []string, config *SearchConfig) {
-	//TODO
-	finalizedPatterns := make([]regexp.Regexp, len(patterns))
-  patterns = slices.Clone(patterns)
-	if config.IgnoreCase {
-		//iterate patterns and lower case them
-		for idx, pattern := range patterns {
-			patterns[idx] = strings.ToLower(pattern)
-		}
-	}
-	//what if it's word regexp.
 
 }
-hello  
+
 // TODO: in main package make sure there is logic to filter out repeat patterns
-func (s *FixedStringSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
+func (s *FixedStringSearch) Search(line string) ([]*SearchResult, error) {
 	results := []*SearchResult{}
 	for _, pattern := range patterns {
 		reg, err := regexp.Compile(regexp.QuoteMeta(pattern))
@@ -98,23 +106,6 @@ func ReconcileOverlappingMatches(matches []*SearchResult) []*SearchResult {
 	return result
 }
 
-type BasicRegexSearch struct{}
-
-func (s *BasicRegexSearch) Search(line string, patterns []string) ([]*SearchResult, error) {
-	results := make([]*SearchResult, 0, 100)
-
-	for _, pattern := range patterns {
-		r, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-		matches := r.FindAllIndex([]byte(line), -1)
-		for _, match := range matches {
-			results = append(results, NewSearchResult(match[0], match[1]))
-		}
-	}
-	return results, nil
-}
 
 type SearchResult struct {
 	StartColumn int
@@ -127,12 +118,17 @@ func NewSearchResult(startColumn, endColumn int) *SearchResult {
 }
 
 // func getMatchText needs to take a searchResult and a line and return the text of the match within the line
-func SearchLine(line string, searchStrategy LineSearcher, patterns []string, searchConfig *SearchConfig) ([]*SearchResult, error) {
-	ignoreCase := searchConfig.IgnoreCase
-	extraRegex := searchConfig.ExtraFilter
-	results, err := searchStrategy.Search(line, patterns)
+func SearchLine(line string, searchStrategy LineSearcher, searchConfig *SearchConfig) ([]*SearchResult, error) {
+	results, err := searchStrategy.Search(line)
 	if err != nil {
 		return nil, err
 	}
 	return ReconcileOverlappingMatches(results), nil
+}
+
+//refactor SearchLine into the creation of a Searcher object with pre-loaded patterns that the caller can do line orchestration with.
+//the function already does the right thing by taking a single line as input, but the patterns are coming in at the same time, so there's no time to load in advance without trying to save some cross call context
+
+func SearchLine2(line string, searcher LineSearcher) (*[]SearchResult, error) {
+
 }
