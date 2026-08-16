@@ -2,7 +2,6 @@ package stringsearch
 
 import (
 	"errors"
-	"regexp"
 )
 
 type ExtraRegexOption int
@@ -24,27 +23,12 @@ type SearchConfig struct {
 	IgnoreCase  bool
 	ExtraFilter ExtraRegexOption
 	SearchType  SearchStrategyValue
-	Patterns    []string
-	Execute     func(line string) ([]*SearchResult, error)
+	patterns    []string
 }
 
-func (s *SearchConfig) FixedStringSearch(line string) ([]*SearchResult, error) {
-	results := []*SearchResult{}
-	for _, pattern := range s.Patterns {
-		reg, err := regexp.Compile(regexp.QuoteMeta(pattern))
-		output := reg.FindAllStringIndex(line, -1)
-		if err != nil {
-			return nil, err
-		}
-		for _, indexPair := range output {
-			results = append(results, NewSearchResult(indexPair[0], indexPair[1]))
-		}
-	}
-	return results, nil
-}
-
-func (s *SearchConfig) BasicRegexSearch(line string) ([]*SearchResult, error) {
-	return nil, nil
+func (s *SearchConfig) Search(line string) ([]*SearchResult, error) {
+	res, err := s.execute(line)
+	return res, err
 }
 
 type SearchOption func(*SearchConfig)
@@ -63,7 +47,7 @@ func WithSearchType(searchStrategy SearchStrategyValue) SearchOption {
 }
 
 func WithPatterns(patterns []string) SearchOption {
-	return func(s *SearchConfig) { s.Patterns = patterns }
+	return func(s *SearchConfig) { s.patterns = patterns }
 }
 
 var InvalidSearchStrategyError = errors.New("Invalid search strategy provided")
@@ -73,7 +57,7 @@ func NewSearchConfig(opts ...SearchOption) (*SearchConfig, error) {
 		IgnoreCase:  false,
 		ExtraFilter: NoExtraRegex,
 		SearchType:  BasicRegexSearchStrategy,
-		Patterns:    []string{},
+		patterns:    []string{},
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -81,9 +65,10 @@ func NewSearchConfig(opts ...SearchOption) (*SearchConfig, error) {
 	// choose search function at struct creation time
 	switch c.SearchType {
 	case BasicRegexSearchStrategy:
-		break
+		c.execute = c.BasicRegexSearch
+		//iterate patterns transform by ignore case
 	case FixedStringSearchStrategy:
-		c.Execute = c.FixedStringSearch
+		c.execute = c.FixedStringSearch
 	default:
 		return nil, InvalidSearchStrategyError
 	}

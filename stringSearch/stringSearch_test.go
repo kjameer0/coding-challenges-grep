@@ -7,7 +7,7 @@ import (
 	stringsearch "grep.coding.com/stringSearch"
 )
 
-func TestFixedStringSearch_Search(t *testing.T) {
+func TestSearchConfig_FixedStringSearch(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for target function.
@@ -76,8 +76,14 @@ func TestFixedStringSearch_Search(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var s stringsearch.FixedStringSearch
-			got, gotErr := s.Search(tt.line, tt.patterns)
+			s, err := stringsearch.NewSearchConfig(
+				stringsearch.WithPatterns(tt.patterns),
+				stringsearch.WithSearchType(stringsearch.FixedStringSearchStrategy),
+			)
+			if err != nil {
+				t.Fatalf("NewSearchConfig() failed: %v", err)
+			}
+			got, gotErr := s.Search(tt.line)
 			if gotErr != nil {
 				if !tt.wantErr {
 					t.Errorf("Search() failed: %v", gotErr)
