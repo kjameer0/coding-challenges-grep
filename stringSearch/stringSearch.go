@@ -26,11 +26,6 @@ type SearchConfig struct {
 	patterns    []string
 }
 
-func (s *SearchConfig) Search(line string) ([]*SearchResult, error) {
-	res, err := s.execute(line)
-	return res, err
-}
-
 type SearchOption func(*SearchConfig)
 
 func WithIgnoreCase(on bool) SearchOption {
@@ -52,7 +47,7 @@ func WithPatterns(patterns []string) SearchOption {
 
 var InvalidSearchStrategyError = errors.New("Invalid search strategy provided")
 
-func NewSearchConfig(opts ...SearchOption) (*SearchConfig, error) {
+func NewSearcher(opts ...SearchOption) (SearchStrategy, error) {
 	c := &SearchConfig{
 		IgnoreCase:  false,
 		ExtraFilter: NoExtraRegex,
@@ -65,14 +60,15 @@ func NewSearchConfig(opts ...SearchOption) (*SearchConfig, error) {
 	// choose search function at struct creation time
 	switch c.SearchType {
 	case BasicRegexSearchStrategy:
-		c.execute = c.BasicRegexSearch
-		//iterate patterns transform by ignore case
+		//TODO: replace invalid errors
+		return nil, nil //iterate patterns transform by ignore case
 	case FixedStringSearchStrategy:
-		c.execute = c.FixedStringSearch
+		return NewFixedSearchStrategy(c), nil
 	default:
 		return nil, InvalidSearchStrategyError
 	}
-	return c, nil
+	//TODO: fill in error state after switch case
+	return nil, nil
 }
 
 // if multiple patterns end up highlighting the same parts of the string, consolidate those into the smallest possible window
