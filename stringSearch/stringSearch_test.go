@@ -76,7 +76,7 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := stringsearch.NewSearchConfig(
+			s, err := stringsearch.NewSearcher(
 				stringsearch.WithPatterns(tt.patterns),
 				stringsearch.WithSearchType(stringsearch.FixedStringSearchStrategy),
 			)
