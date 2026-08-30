@@ -26,11 +26,6 @@ type SearchConfig struct {
 	patterns    []string
 }
 
-func (s *SearchConfig) Search(line string) ([]*SearchResult, error) {
-	res, err := s.Search(line)
-	return res, err
-}
-
 type SearchOption func(*SearchConfig)
 
 func WithIgnoreCase(on bool) SearchOption {
