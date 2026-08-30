@@ -11,10 +11,12 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for target function.
-		line     string
-		patterns []string
-		want     []*stringsearch.SearchResult
-		wantErr  bool
+		line             string
+		patterns         []string
+		want             []*stringsearch.SearchResult
+		ignoreCase       bool
+		extraRegexOption stringsearch.ExtraRegexOption
+		wantErr          bool
 	}{
 		{
 			name:     "single match",
@@ -73,12 +75,33 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			want:     []*stringsearch.SearchResult{},
 			wantErr:  false,
 		},
+		{
+			name:     "matches different cased text when ignoreCase is true",
+			line:     "A",
+			patterns: []string{"a"},
+			want: []*stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 1},
+			},
+			ignoreCase: true,
+			wantErr:    false,
+		},
+		{
+			name:             "matches different cased text when ignoreCase is true, and matches word break regex",
+			line:             "Ab",
+			patterns:         []string{"a"},
+			want:             []*stringsearch.SearchResult{},
+			ignoreCase:       true,
+			extraRegexOption: stringsearch.WordRegexp,
+			wantErr:          false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := stringsearch.NewSearcher(
 				stringsearch.WithPatterns(tt.patterns),
 				stringsearch.WithSearchType(stringsearch.FixedStringSearchStrategy),
+				stringsearch.WithIgnoreCase(tt.ignoreCase),
+				stringsearch.WithExtraRegexFilter(tt.extraRegexOption),
 			)
 			if err != nil {
 				t.Fatalf("NewSearchConfig() failed: %v", err)
