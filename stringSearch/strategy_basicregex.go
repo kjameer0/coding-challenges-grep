@@ -1,15 +1,33 @@
 package stringsearch
 
-import "regexp"
+import (
+	"regexp"
+)
 
-func (s *SearchConfig) BasicRegexSearch(line string) ([]*SearchResult, error) {
-	results := []*SearchResult{}
-	for _, pattern := range s.patterns {
-		reg, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
+type BasicRegexSearch struct {
+	config                  *SearchConfig
+	postCompilationPatterns []*regexp.Regexp
+}
+
+func NewBasicRegexSearch(c *SearchConfig) *BasicRegexSearch {
+	var fss *BasicRegexSearch = &BasicRegexSearch{}
+	fss.postCompilationPatterns = make([]*regexp.Regexp, 0)
+	for _, pattern := range c.patterns {
+		pattern = applySurroundedRegexpChar(pattern, c.ExtraFilter)
+		if c.IgnoreCase {
+			pattern = IgnoreCaseRegex + pattern
 		}
-		output := reg.FindAllStringIndex(line, -1)
+		re := regexp.MustCompile(pattern)
+		fss.postCompilationPatterns = append(fss.postCompilationPatterns, re)
+	}
+	return fss
+}
+
+func (s *BasicRegexSearch) Search(line string) ([]*SearchResult, error) {
+	results := []*SearchResult{}
+	//TODO Add basic regex search specific logic
+	for _, re := range s.postCompilationPatterns {
+		output := re.FindAllStringIndex(line, -1)
 		for _, indexPair := range output {
 			results = append(results, NewSearchResult(indexPair[0], indexPair[1]))
 		}
