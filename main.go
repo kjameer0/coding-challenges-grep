@@ -218,10 +218,3 @@ func main() {
 
 	//1 arg = only pattern, allow reading input from stdin
 }
-
-//TODO: allow parsing of regex with different flags
-//TODO:
-//TODO:
-//TODO:
-//TODO:
-//TODO:
