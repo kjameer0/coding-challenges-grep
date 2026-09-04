@@ -60,7 +60,7 @@ func NewSearcher(opts ...SearchOption) (Searcher, error) {
 	// new searcher implementations need to be added here to be available to users
 	switch c.SearchType {
 	case BasicRegexSearchStrategy:
-		return nil, errors.ErrUnsupported
+		return NewBasicRegexSearch(c), nil
 	case FixedStringSearchStrategy:
 		return NewFixedStringSearch(c), nil
 	default:

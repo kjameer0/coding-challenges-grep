@@ -9,7 +9,7 @@ func applySurroundedRegexpChar(pattern string, option ExtraRegexOption) string {
 	case NoExtraRegex:
 		return pattern
 	case WordRegexp:
-		return fmt.Sprintf("\b%s\b", pattern)
+		return fmt.Sprintf("\\b%s\\b", pattern)
 	case LineRegexp:
 		return fmt.Sprintf("^%s$", pattern)
 	default:

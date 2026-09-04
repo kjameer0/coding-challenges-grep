@@ -7,7 +7,7 @@ import (
 	stringsearch "grep.coding.com/stringSearch"
 )
 
-func TestSearchConfig_FixedStringSearch(t *testing.T) {
+func TestBasicRegexSearch_Search(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for target function.
@@ -69,20 +69,25 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:     "matches literal text of a regular expression string",
-			line:     "a+",
-			patterns: []string{"aa"},
-			want:     []*stringsearch.SearchResult{},
-			wantErr:  false,
-		},
-		{
-			// Divergence from BasicRegexSearch: "+" is literal here, so the whole
-			// two-character line matches.
-			name:     "treats regex metacharacters as literals",
+			// Divergence from FixedStringSearch: "+" is a quantifier here, not a
+			// literal, so "a+" matches the leading "a" only rather than the whole
+			// two-character line.
+			name:     "treats regex metacharacters as operators",
 			line:     "a+",
 			patterns: []string{"a+"},
 			want: []*stringsearch.SearchResult{
-				{StartColumn: 0, EndColumn: 2},
+				{StartColumn: 0, EndColumn: 1},
+			},
+			wantErr: false,
+		},
+		{
+			// Divergence from FixedStringSearch: "." is any character, so a pattern
+			// that would not appear literally still matches.
+			name:     "wildcard matches any character",
+			line:     "hello world",
+			patterns: []string{"h.llo"},
+			want: []*stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 5},
 			},
 			wantErr: false,
 		},
@@ -106,6 +111,9 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			wantErr:          false,
 		},
 		{
+			// FAILING: applySurroundedRegexpChar builds "\b" as the backspace byte
+			// (0x08) instead of the regex word-boundary assertion "\\b", so
+			// WordRegexp currently never matches anything.
 			name:             "word regexp matches a standalone word",
 			line:             "a b",
 			patterns:         []string{"a"},
@@ -114,19 +122,20 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			wantErr:          false,
 		},
 		{
-			name:             "line matching regexp matches the whole line",
-			line:             "b ",
-			patterns:         []string{"b"},
+			name:             "line regexp anchors the whole pattern",
+			line:             "aa ",
+			patterns:         []string{"a+"},
 			want:             []*stringsearch.SearchResult{},
 			extraRegexOption: stringsearch.LineRegexp,
 			wantErr:          false,
 		},
 	}
 	for _, tt := range tests {
+
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := stringsearch.NewSearcher(
 				stringsearch.WithPatterns(tt.patterns),
-				stringsearch.WithSearchType(stringsearch.FixedStringSearchStrategy),
+				stringsearch.WithSearchType(stringsearch.BasicRegexSearchStrategy),
 				stringsearch.WithIgnoreCase(tt.ignoreCase),
 				stringsearch.WithExtraRegexFilter(tt.extraRegexOption),
 			)
@@ -145,121 +154,6 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Search() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestReconcileOverlappingMatches(t *testing.T) {
-	tests := []struct {
-		name    string
-		matches []*stringsearch.SearchResult
-		want    []*stringsearch.SearchResult
-	}{
-		{
-			name:    "Empty input yields empty array of match intervals",
-			matches: []*stringsearch.SearchResult{},
-			want:    []*stringsearch.SearchResult{},
-		},
-		{
-			name: "Overlapping intervals get merged",
-			matches: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   1,
-				},
-				{
-					StartColumn: 1,
-					EndColumn:   2,
-				},
-			},
-			want: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   2,
-				},
-			},
-		},
-		{
-			name: "Multiple non-consecutive overlapping intervals get merged",
-			matches: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   1,
-				},
-				{
-					StartColumn: 1,
-					EndColumn:   2,
-				},
-				{
-					StartColumn: 10,
-					EndColumn:   30,
-				},
-				{
-					StartColumn: 25,
-					EndColumn:   45,
-				},
-			},
-			want: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   2,
-				},
-				{
-					StartColumn: 10,
-					EndColumn:   45,
-				},
-			},
-		},
-		{
-			name: "Intervals inside of a larger interval get subsumed",
-			matches: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   1,
-				},
-				{
-					StartColumn: 1,
-					EndColumn:   2,
-				},
-				{
-					StartColumn: 10,
-					EndColumn:   30,
-				},
-				{
-					StartColumn: 15,
-					EndColumn:   20,
-				},
-				{
-					StartColumn: 25,
-					EndColumn:   45,
-				},
-			},
-			want: []*stringsearch.SearchResult{
-				{
-					StartColumn: 0,
-					EndColumn:   2,
-				},
-				{
-					StartColumn: 10,
-					EndColumn:   45,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := stringsearch.ReconcileOverlappingMatches(tt.matches)
-			if len(got) != len(tt.want) {
-				t.Errorf("Unequal got and want lengths. got %v, want %v", got, tt.want)
-				return
-			}
-			for intervalIdx := 0; intervalIdx < len(got); intervalIdx++ {
-				gotInterval := got[intervalIdx]
-				wantInterval := tt.want[intervalIdx]
-				if gotInterval.StartColumn != wantInterval.StartColumn || gotInterval.EndColumn != wantInterval.EndColumn {
-					t.Errorf("Name: %s got %v, want %v", tt.name, got, tt.want)
-				}
 			}
 		})
 	}
