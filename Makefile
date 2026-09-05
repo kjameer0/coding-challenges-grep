@@ -14,4 +14,4 @@ test_unit:
 	go test ./...
 
 test_integration:
-	go test -tags=integration
+	go test -v -tags=integration

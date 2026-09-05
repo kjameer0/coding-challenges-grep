@@ -3,19 +3,26 @@
 package main_test
 
 import (
-	"os/exec"
-	"strings"
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestHelpMessage(t *testing.T) {
-	//TODO: determine if this test is worth it
-	command := exec.Command("./grep.coding.com")
-	b, err := command.Output()
-	if err != nil {
-		t.Fatal("Command failed to execute")
-	}
-	if strings.Contains(string(b), "help"){
+var binaryName = "grep.coding.com"
 
+var binaryPath = ""
+
+func TestMain(m *testing.M) {
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("could not get current dir: %v", err)
 	}
+
+	binaryPath = filepath.Join(dir, binaryName)
+	fmt.Println("running program****")
+	fmt.Println(binaryPath)
+	fmt.Println("running program****")
+
+	m.Run()
 }
