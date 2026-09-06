@@ -2,6 +2,7 @@ package stringsearch
 
 import (
 	"errors"
+	"fmt"
 )
 
 type ExtraRegexOption int
@@ -96,6 +97,9 @@ type SearchResult struct {
 	// TODO: decide whether or not to include the actual string
 }
 
+func (s *SearchResult) String() string {
+	return fmt.Sprintf("Start Column: %d, End Column: %d", s.StartColumn, s.EndColumn)
+}
 func NewSearchResult(startColumn, endColumn int) *SearchResult {
 	return &SearchResult{StartColumn: startColumn, EndColumn: endColumn}
 }

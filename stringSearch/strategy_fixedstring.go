@@ -15,7 +15,7 @@ func NewFixedStringSearch(c *SearchConfig) *FixedStringSearch {
 	for _, pattern := range c.patterns {
 		pattern = applySurroundedRegexpChar(regexp.QuoteMeta(pattern), c.ExtraFilter, c.SearchType)
 		if c.IgnoreCase {
-			pattern = IgnoreCaseRegex + pattern
+			pattern = IGNORE_CASE_REGEX + pattern
 		}
 		re := regexp.MustCompile(pattern)
 		fss.postCompilationPatterns = append(fss.postCompilationPatterns, re)

@@ -2,16 +2,28 @@ package stringsearch
 
 import (
 	"fmt"
+	"strings"
 )
 
-const IgnoreCaseRegex = "(?i)"
-
+const IGNORE_CASE_REGEX = "(?i)"
+const WORD_BREAK_SEQUENCE = "\\b"
 func applySurroundedRegexpChar(pattern string, option ExtraRegexOption, strategy SearchStrategyValue) string {
 	switch option {
 	case NoExtraRegex:
 		return pattern
 	case WordRegexp:
-		return fmt.Sprintf("\\b%s\\b", pattern)
+		if strategy != BasicRegexSearchStrategy {
+			return fmt.Sprintf("\\b%s\\b", pattern)
+		}
+		var leftSide string
+		var rightSide string
+		if strings.HasPrefix(pattern, "\\b") {
+			leftSide = "\\b"
+		}
+		if strings.HasSuffix(pattern, "\\b") {
+			rightSide = "\\b"
+		}
+		return fmt.Sprintf("%s%s%s", leftSide, pattern, rightSide)
 	case LineRegexp:
 		if strategy != BasicRegexSearchStrategy {
 			return fmt.Sprintf("^%s$", pattern)

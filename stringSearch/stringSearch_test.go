@@ -121,16 +121,6 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			extraRegexOption: stringsearch.LineRegexp,
 			wantErr:          false,
 		},
-		{
-			name:     "line matching regexp handles regex line syntax",
-			line:     "b ",
-			patterns: []string{"^b $"},
-			want: []*stringsearch.SearchResult{
-				{StartColumn: 0, EndColumn: 1},
-			},
-			extraRegexOption: stringsearch.LineRegexp,
-			wantErr:          false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

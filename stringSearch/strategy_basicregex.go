@@ -15,7 +15,7 @@ func NewBasicRegexSearch(c *SearchConfig) *BasicRegexSearch {
 	for _, pattern := range c.patterns {
 		pattern = applySurroundedRegexpChar(pattern, c.ExtraFilter, c.SearchType)
 		if c.IgnoreCase {
-			pattern = IgnoreCaseRegex + pattern
+			pattern = IGNORE_CASE_REGEX + pattern
 		}
 		re := regexp.MustCompile(pattern)
 		fss.postCompilationPatterns = append(fss.postCompilationPatterns, re)
