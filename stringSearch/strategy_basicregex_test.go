@@ -111,9 +111,6 @@ func TestBasicRegexSearch_Search(t *testing.T) {
 			wantErr:          false,
 		},
 		{
-			// FAILING: applySurroundedRegexpChar builds "\b" as the backspace byte
-			// (0x08) instead of the regex word-boundary assertion "\\b", so
-			// WordRegexp currently never matches anything.
 			name:             "word regexp matches a standalone word",
 			line:             "a b",
 			patterns:         []string{"a"},

@@ -13,7 +13,7 @@ func NewBasicRegexSearch(c *SearchConfig) *BasicRegexSearch {
 	var fss *BasicRegexSearch = &BasicRegexSearch{}
 	fss.postCompilationPatterns = make([]*regexp.Regexp, 0)
 	for _, pattern := range c.patterns {
-		pattern = applySurroundedRegexpChar(pattern, c.ExtraFilter)
+		pattern = applySurroundedRegexpChar(pattern, c.ExtraFilter, c.SearchType)
 		if c.IgnoreCase {
 			pattern = IgnoreCaseRegex + pattern
 		}
@@ -25,7 +25,7 @@ func NewBasicRegexSearch(c *SearchConfig) *BasicRegexSearch {
 
 func (s *BasicRegexSearch) Search(line string) ([]*SearchResult, error) {
 	results := []*SearchResult{}
-	//TODO Add basic regex search specific logic
+
 	for _, re := range s.postCompilationPatterns {
 		output := re.FindAllStringIndex(line, -1)
 		for _, indexPair := range output {

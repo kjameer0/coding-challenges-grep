@@ -76,7 +76,7 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			// Divergence from BasicRegexSearch: "+" is literal here, so the whole
+			// Divergence from https://pkg.go.dev/testing#hdr-MainRegexSearch: "+" is literal here, so the whole
 			// two-character line matches.
 			name:     "treats regex metacharacters as literals",
 			line:     "a+",
@@ -118,6 +118,16 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			line:             "b ",
 			patterns:         []string{"b"},
 			want:             []*stringsearch.SearchResult{},
+			extraRegexOption: stringsearch.LineRegexp,
+			wantErr:          false,
+		},
+		{
+			name:     "line matching regexp handles regex line syntax",
+			line:     "b ",
+			patterns: []string{"^b $"},
+			want: []*stringsearch.SearchResult{
+				{StartColumn: 0, EndColumn: 1},
+			},
 			extraRegexOption: stringsearch.LineRegexp,
 			wantErr:          false,
 		},

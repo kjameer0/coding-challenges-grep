@@ -13,7 +13,7 @@ func NewFixedStringSearch(c *SearchConfig) *FixedStringSearch {
 	var fss *FixedStringSearch = &FixedStringSearch{}
 	fss.postCompilationPatterns = make([]*regexp.Regexp, 0)
 	for _, pattern := range c.patterns {
-		pattern = applySurroundedRegexpChar(regexp.QuoteMeta(pattern), c.ExtraFilter)
+		pattern = applySurroundedRegexpChar(regexp.QuoteMeta(pattern), c.ExtraFilter, c.SearchType)
 		if c.IgnoreCase {
 			pattern = IgnoreCaseRegex + pattern
 		}
