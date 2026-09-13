@@ -4,25 +4,31 @@ package main_test
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"os/exec"
 	"testing"
 )
 
-var binaryName = "grep.coding.com"
-
-var binaryPath = ""
-
-func TestMain(m *testing.M) {
-	dir, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("could not get current dir: %v", err)
+func runBinary(args []string) ([]byte, error) {
+	cmd := exec.Command(binaryPath, args...)
+	return cmd.CombinedOutput()
+}
+func TestCliArgs(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr bool
+	}{
+		{name: "no arguments should error", args: []string{}, wantErr: true},
 	}
 
-	binaryPath = filepath.Join(dir, binaryName)
-	fmt.Println("running program****")
-	fmt.Println(binaryPath)
-	fmt.Println("running program****")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fmt.Println(binaryPath)
+			_, err := runBinary(tt.args)
+			if err != nil && !tt.wantErr {
+				t.Fatal(err)
+			}
 
-	m.Run()
+		})
+	}
 }

@@ -56,6 +56,7 @@ type Cfg struct {
 
 type FileCfg struct {
 	//TODO: plan out types for file inclusion ond exclusion
+	files []string
 }
 
 type DisplayCfg struct {
@@ -169,8 +170,14 @@ func ParseOptions(args []string, flagSet *flag.FlagSet) (*Cfg, error) {
 	}
 
 	patternArg := flagSet.Arg(0)
-	if patternArg != "" {
+	if patternArg != "" && len(config.patterns) == 0 {
 		config.patterns = append(config.patterns, patternArg)
+		// skip first arg for file paths
+		config.files = flagSet.Args()[1:]
+	}
+	// if no files have been added yet, use every positional arg
+	if len(config.files) == 0 {
+		config.files = flag.Args()
 	}
 
 	if len(config.patterns) == 0 {
@@ -200,6 +207,5 @@ func ParseOptions(args []string, flagSet *flag.FlagSet) (*Cfg, error) {
 	if validationError != nil {
 		return nil, validationError
 	}
-
 	return config, nil
 }

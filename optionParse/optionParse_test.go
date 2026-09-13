@@ -2,6 +2,7 @@ package optionparse
 
 import (
 	"flag"
+	"reflect"
 	"testing"
 )
 
@@ -79,6 +80,14 @@ func Test_parseOptions(t *testing.T) {
 			want:    &Cfg{PatternCfg: PatternCfg{patterns: []string{"hello", "welcome", "/try/"}}},
 			wantErr: false,
 		},
+		{
+			name: "positional args can be read",
+			args: []string{"-e=hello", "-e", "welcome", "/try/"},
+			want: &Cfg{PatternCfg: PatternCfg{patterns: []string{"hello", "welcome"}},
+				FileCfg: FileCfg{files: []string{"/try/"}},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,7 +103,7 @@ func Test_parseOptions(t *testing.T) {
 				t.Fatal("parseOptions() succeeded unexpectedly")
 			}
 
-			if !isCfgEqual(tt.want, got) {
+			if !reflect.DeepEqual(tt.want, got) {
 				t.Errorf("Test '%s', parseOptions() = %v, want %v", tt.name, got, tt.want)
 			}
 		})

@@ -76,8 +76,7 @@ func TestSearchConfig_FixedStringSearch(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			// Divergence from https://pkg.go.dev/testing#hdr-MainRegexSearch: "+" is literal here, so the whole
-			// two-character line matches.
+			// "+" is literal here, so the whole two-character line matches.
 			name:     "treats regex metacharacters as literals",
 			line:     "a+",
 			patterns: []string{"a+"},
