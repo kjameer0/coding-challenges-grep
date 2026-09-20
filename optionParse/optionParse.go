@@ -189,7 +189,7 @@ func ParseOptions(args []string, flagSet *flag.FlagSet) (*Cfg, error) {
 		if slices.Contains(ContextAliases, f.Name) {
 			contextInt, err := strconv.Atoi(f.Value.String())
 			if err != nil {
-				validationError = errors.New("Unable to parse context lines from --context into int")
+				validationError = errors.New("Unable to parse context lines count from --context into int")
 				return
 			}
 			config.AfterContext = contextInt

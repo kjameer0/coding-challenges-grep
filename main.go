@@ -20,6 +20,6 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(2)
 	}
-
+	// if len(cfg.FileCfg.)
 	//1 arg = only pattern, allow reading input from stdin
 }

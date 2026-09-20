@@ -57,9 +57,11 @@ func Test_parseOptions(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "one positonal arg and no flags",
-			args:    []string{"foo"},
-			want:    &Cfg{},
+			name: "one positonal arg and no flags",
+			args: []string{"foo"},
+			want: &Cfg{
+				PatternCfg: PatternCfg{patterns: []string{"foo"}},
+			},
 			wantErr: false,
 		},
 		{
