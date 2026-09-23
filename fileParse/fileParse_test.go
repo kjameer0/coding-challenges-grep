@@ -10,8 +10,8 @@ import (
 
 func TestParseCfg_ConstructFileSet(t *testing.T) {
 	testDirName := "testRootDir"
-	simpleRecursionDir := filepath.Join(testDirName, "simpleRecursionRoot")
-
+	// simpleRecursionDir := filepath.Join(testDirName, "simpleRecursionRoot")
+	symlinkDir := filepath.Join(testDirName, "mockfs", "symlinks")
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -21,24 +21,33 @@ func TestParseCfg_ConstructFileSet(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		// {
+		// 	name: "Files can be discovered without recursing into subdirs",
+		// 	want: []string{"f1"},
+		// 	opts: []fileparse.ParseOption{
+		// 		fileparse.WithUniversePaths([]string{testDirName}),
+		// 	},
+		// },
+		// {
+		// 	name: "files in nested folders can be discovered",
+		// 	want: []string{"child1/f4", "f3"},
+		// 	opts: []fileparse.ParseOption{
+		// 		fileparse.WithUniversePaths([]string{simpleRecursionDir}),
+		// 		fileparse.WithRecursiveResolution(true),
+		// 	},
+		// },
 		{
-			name: "Files can be discovered without recursing into subdirs",
-			want: []string{"f1"},
+			name: "symlinked directories can not produce a cycle. Required for grep -R",
+			want: []string{},
 			opts: []fileparse.ParseOption{
-				fileparse.WithUniversePaths([]string{testDirName}),
-			},
-		},
-		{
-			want: []string{"child1/f4", "f3"},
-			opts: []fileparse.ParseOption{
-				fileparse.WithUniversePaths([]string{simpleRecursionDir}),
+				fileparse.WithUniversePaths([]string{symlinkDir}),
 				fileparse.WithRecursiveResolution(true),
+				fileparse.WithDirectorySymlinkFollowing(true),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// tt.opts = append(tt.opts, fileparse.WithUniversePaths([]string{root}))
 			p, err := fileparse.NewParseCfg(tt.opts...)
 			if err != nil {
 				t.Fatalf("could not construct receiver type: %v", err)

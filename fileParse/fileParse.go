@@ -14,13 +14,14 @@ var (
 )
 
 type ParseCfg struct {
-	UniversePaths       []string
-	IncludeFiles        []string
-	ExcludeFiles        []string
-	ExcludeDirs         []string
-	outputFileSet       []string
-	seenPaths           map[string]bool
-	RecursiveResolution bool
+	UniversePaths             []string
+	IncludeFiles              []string
+	ExcludeFiles              []string
+	ExcludeDirs               []string
+	outputFileSet             []string
+	seenPaths                 map[string]bool
+	RecursiveResolution       bool
+	DirectorySymlinkFollowing bool
 }
 
 type ParseOption func(*ParseCfg)
@@ -28,6 +29,12 @@ type ParseOption func(*ParseCfg)
 func WithIncludeFiles(files []string) ParseOption {
 	return func(p *ParseCfg) {
 		p.IncludeFiles = files
+	}
+}
+
+func WithDirectorySymlinkFollowing(on bool) ParseOption {
+	return func(p *ParseCfg) {
+		p.DirectorySymlinkFollowing = on
 	}
 }
 
@@ -54,11 +61,18 @@ func WithUniversePaths(paths []string) ParseOption {
 
 func (p *ParseCfg) CustomWalkDirFuncGenerator() fs.WalkDirFunc {
 	return func(path string, dir fs.DirEntry, err error) error {
+		if err != nil {
+			panic(err)
+		}
 		if dir.IsDir() && p.RecursiveResolution == false && path != "." {
 			return fs.SkipDir
 		}
-		if dir.IsDir() {
+		if dir.IsDir() || p.seenPaths[path] == true {
 			return nil
+		}
+		if dir.Type() != fs.ModeAppend{
+			symlinkFs := os.DirFS(path)
+			fs.WalkDir(symlinkFs, ".", p.CustomWalkDirFuncGenerator())
 		}
 		p.outputFileSet = append(p.outputFileSet, path)
 		p.seenPaths[path] = true
