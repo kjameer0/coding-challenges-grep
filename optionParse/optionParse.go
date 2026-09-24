@@ -54,9 +54,17 @@ type Cfg struct {
 	PatternCfg
 }
 
+func (c *Cfg) String() string {
+	return fmt.Sprintf("%s %s %s", c.FileCfg.String(), c.DisplayCfg.String(), c.PatternCfg.String())
+}
+
 type FileCfg struct {
 	//TODO: plan out types for file inclusion ond exclusion
 	files []string
+}
+
+func (c *FileCfg) String() string {
+	return fmt.Sprintf("Files: %v", c.files)
 }
 
 type DisplayCfg struct {
@@ -67,11 +75,19 @@ type DisplayCfg struct {
 	UseCount      bool
 }
 
+func (c *DisplayCfg) String() string {
+	return fmt.Sprintf("Color: %s Before Context: %d After Context %d use_byte_offset %v use_count %v", c.Color, c.BeforeContext, c.AfterContext, c.UseByteOffset, c.UseCount)
+}
+
 type PatternCfg struct {
 	WordRegexp bool
 	LineRegexp bool
 	IgnoreCase bool
 	patterns   []string
+}
+
+func (c *PatternCfg) String() string {
+	return fmt.Sprintf("use_word_regexp: %v, use_line_regexp: %v, ignore_case: %v, patterns: %v", c.WordRegexp, c.LineRegexp, c.IgnoreCase, c.patterns)
 }
 
 func isPatternCfgEqual(patternCfg1 *PatternCfg, patternCfg2 *PatternCfg) bool {
@@ -170,14 +186,20 @@ func ParseOptions(args []string, flagSet *flag.FlagSet) (*Cfg, error) {
 	}
 
 	patternArg := flagSet.Arg(0)
+	// true if a pattern has already been placed and we can assume every pos arg is a file path
+
+	var startIdx int = 0
 	if patternArg != "" && len(config.patterns) == 0 {
 		config.patterns = append(config.patterns, patternArg)
-		// skip first arg for file paths
-		config.files = flagSet.Args()[1:]
+		startIdx = 1
 	}
-	// if no files have been added yet, use every positional arg
+	
+	if len(flagSet.Args()) > 0 {
+		config.files = flagSet.Args()[startIdx:]
+	}
+
 	if len(config.files) == 0 {
-		config.files = flag.Args()
+		config.files = nil
 	}
 
 	if len(config.patterns) == 0 {

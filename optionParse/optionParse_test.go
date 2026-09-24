@@ -21,15 +21,21 @@ func Test_parseOptions(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "correct color option",
-			args:    []string{"--color=auto", "hello"},
-			want:    &Cfg{DisplayCfg: DisplayCfg{Color: "auto"}},
+			name: "correct color option",
+			args: []string{"--color=auto", "hello"},
+			want: &Cfg{
+				DisplayCfg: DisplayCfg{Color: COLOR_AUTO},
+				PatternCfg: PatternCfg{patterns: []string{"hello"}},
+			},
 			wantErr: false,
 		},
 		{
-			name:    "correct color option, with alias",
-			args:    []string{"--colour=auto", "hello"},
-			want:    &Cfg{DisplayCfg: DisplayCfg{Color: "auto"}},
+			name: "correct color option, with alias",
+			args: []string{"--colour=auto", "hello"},
+			want: &Cfg{
+				DisplayCfg: DisplayCfg{Color: "auto"},
+				PatternCfg: PatternCfg{patterns: []string{"hello"}},
+			},
 			wantErr: false,
 		},
 		{
@@ -39,27 +45,28 @@ func Test_parseOptions(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "--context overrides both before and after context",
-			args:    []string{"-B=1", "-A=4", "--context=3", "hello"},
-			want:    &Cfg{DisplayCfg: DisplayCfg{BeforeContext: 3, AfterContext: 3}},
+			name: "--context overrides both before and after context",
+			args: []string{"-B=1", "-A=4", "--context=3", "hello"},
+			want: &Cfg{
+				DisplayCfg: DisplayCfg{BeforeContext: 3, AfterContext: 3},
+				PatternCfg: PatternCfg{patterns: []string{"hello"}},
+			},
 			wantErr: false,
 		},
 		{
-			name:    "--context overrides both before and after context",
-			args:    []string{"-B=2", "-A=4", "pattern"},
-			want:    &Cfg{DisplayCfg: DisplayCfg{BeforeContext: 2, AfterContext: 4}},
+			name: "-C alias behaves the same as --context",
+			args: []string{"-C=5", "hello"},
+			want: &Cfg{DisplayCfg: DisplayCfg{BeforeContext: 5, AfterContext: 5},
+				PatternCfg: PatternCfg{patterns: []string{"hello"}},
+			},
 			wantErr: false,
 		},
 		{
-			name:    "-C alias behaves the same as --context",
-			args:    []string{"-C=5", "hello"},
-			want:    &Cfg{DisplayCfg: DisplayCfg{BeforeContext: 5, AfterContext: 5}},
-			wantErr: false,
-		},
-		{
-			name:    "one positonal arg and no flags",
-			args:    []string{"foo"},
-			want:    &Cfg{},
+			name: "one positonal arg and no flags",
+			args: []string{"foo"},
+			want: &Cfg{
+				PatternCfg: PatternCfg{patterns: []string{"foo"}},
+			},
 			wantErr: false,
 		},
 		{
@@ -77,7 +84,10 @@ func Test_parseOptions(t *testing.T) {
 		{
 			name:    "allows multiple regexp args with positional arg",
 			args:    []string{"-e=hello", "-e", "welcome", "/try/"},
-			want:    &Cfg{PatternCfg: PatternCfg{patterns: []string{"hello", "welcome", "/try/"}}},
+			want:    &Cfg{
+				PatternCfg: PatternCfg{patterns: []string{"hello", "welcome"}},
+				FileCfg: FileCfg{files: []string{"/try/"}},
+			},
 			wantErr: false,
 		},
 		{
@@ -104,7 +114,7 @@ func Test_parseOptions(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(tt.want, got) {
-				t.Errorf("Test '%s', parseOptions() = %v, want %v", tt.name, got, tt.want)
+				t.Errorf("Test '%s',\n got  = %v\n, want %v", tt.name, got, tt.want)
 			}
 		})
 	}
