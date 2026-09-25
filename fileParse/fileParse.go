@@ -70,8 +70,9 @@ func (p *ParseCfg) CustomWalkDirFuncGenerator() fs.WalkDirFunc {
 		if dir.IsDir() || p.seenPaths[path] == true {
 			return nil
 		}
-		if dir.Type() != fs.ModeAppend{
+		if dir.Type() == fs.ModeSymlink{
 			symlinkFs := os.DirFS(path)
+			
 			fs.WalkDir(symlinkFs, ".", p.CustomWalkDirFuncGenerator())
 		}
 		p.outputFileSet = append(p.outputFileSet, path)
